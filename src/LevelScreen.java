@@ -1,9 +1,24 @@
+import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Button.ButtonStyle;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
 
 public class LevelScreen extends BaseScreen
 {
     private Turtle turtle;
     private boolean win;
+    private Label starfishLabel;
 
     public void initialize()
     {
@@ -25,6 +40,33 @@ public class LevelScreen extends BaseScreen
         turtle = new Turtle(20,20, mainStage);
 
         win = false;
+
+        // user interface code
+        starfishLabel = new Label("Starfish Left:", BaseGame.labelStyle);
+        starfishLabel.setColor( Color.CYAN );
+        starfishLabel.setPosition( 20, 520 );
+        uiStage.addActor(starfishLabel);
+
+        ButtonStyle buttonStyle = new ButtonStyle();
+
+        Texture buttonTex = new Texture( Gdx.files.internal("assets/undo.png") );
+        TextureRegion buttonRegion =  new TextureRegion(buttonTex);
+        buttonStyle.up = new TextureRegionDrawable( buttonRegion );
+
+        Button restartButton = new Button( buttonStyle );
+        restartButton.setColor( Color.CYAN );
+        restartButton.setPosition(720,520);
+        uiStage.addActor(restartButton);
+
+        restartButton.addListener(
+                (Event e) ->
+                {
+                    InputEvent ie = (InputEvent)e;
+                    if ( ie.getType().equals(Type.touchDown) )
+                        StarfishGame.setActiveScreen( new LevelScreen() );
+                    return false;
+                }
+        );
     }
 
     public void update(float dt)
@@ -58,5 +100,7 @@ public class LevelScreen extends BaseScreen
             youWinMessage.addAction( Actions.delay(1) );
             youWinMessage.addAction( Actions.after( Actions.fadeIn(1) ) );
         }
+
+        starfishLabel.setText("Starfish Left: " + BaseActor.count(mainStage, "Starfish"));
     }
 }

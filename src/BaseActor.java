@@ -23,6 +23,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.badlogic.gdx.scenes.scene2d.Group;
 
 /**
  * Extends functionality of the LibGDX Actor class.
@@ -32,7 +33,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
  * @see #Actor
  **/
 
-public class BaseActor extends Actor
+public class BaseActor extends Group
 {
     private Animation<TextureRegion> animation;
     private float elapsedTime;
@@ -63,6 +64,25 @@ public class BaseActor extends Actor
         acceleration = 0;
         maxSpeed = 1000;
         deceleration = 0;
+    }
+
+    /**
+     *  If this object moves completely past the world bounds,
+     *  adjust its position to the opposite side of the world.
+     */
+    public void wrapAroundWorld()
+    {
+        if (getX() + getWidth() < 0)
+            setX( worldBounds.width );
+
+        if (getX() > worldBounds.width)
+            setX( -getWidth());
+
+        if (getY() + getHeight() < 0)
+            setY( worldBounds.height );
+
+        if (getY() > worldBounds.height)
+            setY( -getHeight() );
     }
 
     /**
@@ -281,9 +301,19 @@ public class BaseActor extends Actor
      *  Calculates the speed of movement (in pixels/second).
      *  @return speed of movement (pixels/second)
      */
+
     public float getSpeed()
     {
         return velocityVec.len();
+    }
+
+    /**
+     * Maxspeed getter
+     * @return maxSpeed of actor
+     */
+    public float getMaxSpeed()
+    {
+        return maxSpeed;
     }
 
     /**
@@ -590,8 +620,6 @@ public class BaseActor extends Actor
      */
     public void draw(Batch batch, float parentAlpha)
     {
-        super.draw( batch, parentAlpha );
-
         // apply color tint effect
         Color c = getColor();
         batch.setColor(c.r, c.g, c.b, c.a);
@@ -599,5 +627,7 @@ public class BaseActor extends Actor
         if ( animation != null && isVisible() )
             batch.draw( animation.getKeyFrame(elapsedTime), getX(), getY(), getOriginX(), getOriginY(), getWidth(),
                     getHeight(), getScaleX(), getScaleY(), getRotation() );
+
+        super.draw( batch, parentAlpha );
     }
 }
