@@ -25,7 +25,11 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 /**
- * Extend functionality of the LibGDX Actor class.
+ * Extends functionality of the LibGDX Actor class.
+ * by adding support for textures/animation,
+ * collision polygons, movement, world boundaries, and camera scrolling.
+ * Most game objects should extend this class; lists of extensions can be retrieved by stage and class name.
+ * @see #Actor
  **/
 
 public class BaseActor extends Actor
@@ -41,6 +45,8 @@ public class BaseActor extends Actor
     private float deceleration;
 
     private Polygon boundaryPolygon;
+
+    private static Rectangle worldBounds;
 
     public BaseActor(float x, float y, Stage s)
     {
@@ -84,6 +90,10 @@ public class BaseActor extends Actor
     // Animation methods
     // ----------------------------------------------
 
+    /**
+     * Sets the animation used when rendering this actor; also sets actor size.
+     * @param anim animation that will be drawn when actor is rendered
+     */
     public void setAnimation(Animation<TextureRegion> anim)
     {
         animation = anim;
@@ -97,6 +107,13 @@ public class BaseActor extends Actor
             setBoundaryRectangle();
     }
 
+    /**
+     * Creates an animation from images stored in separate files.
+     * @param fileNames array of names of files containing animation images
+     * @param frameDuration how long each frame should be displayed
+     * @param loop should the animation loop
+     * @return animation created (useful for storing multiple animations)
+     */
     public Animation<TextureRegion> loadAnimationFromFiles(String[] fileNames, float frameDuration, boolean loop)
     {
         int fileCount = fileNames.length;
@@ -114,6 +131,15 @@ public class BaseActor extends Actor
         return anim;
     }
 
+    /**
+     * Creates an animation from a spritesheet: a rectangular grid of images stored in a single file.
+     * @param fileName name of file containing spritesheet
+     * @param rows number of rows of images in spritesheet
+     * @param cols number of columns of images in spritesheet
+     * @param frameDuration how long each frame should be displayed
+     * @param loop should the animation loop
+     * @return animation created (useful for storing multiple animations)
+     */
     public Animation<TextureRegion> loadAnimationFromSheet(String fileName, int rows, int cols, float frameDuration,
                                                            boolean loop)
     {
@@ -135,6 +161,13 @@ public class BaseActor extends Actor
         return anim;
     }
 
+    /**
+     * Creates an animation from a textureArray.
+     * @param textureArray array containing all textures for the animation
+     * @param frameDuration how long each frame should be displayed
+     * @param loop should the animation loop
+     * @return animation created (useful for storing multiple animations)
+     */
     public Animation<TextureRegion> loadAnimation(Array<TextureRegion> textureArray, float frameDuration,
                                                     boolean loop){
         Animation<TextureRegion> anim = new Animation<TextureRegion>(frameDuration, textureArray);
@@ -149,6 +182,11 @@ public class BaseActor extends Actor
         return anim;
     }
 
+    /**
+     *  Convenience method for creating a 1-frame animation from a single texture.
+     *  @param fileName names of image file
+     *  @return animation created (useful for storing multiple animations)
+     */
     public Animation<TextureRegion> loadTexture(String fileName)
     {
         String[] fileNames = new String[1];
@@ -156,16 +194,29 @@ public class BaseActor extends Actor
         return loadAnimationFromFiles(fileNames, 1, true);
     }
 
+    /**
+     *  Set the pause state of the animation.
+     *  @param pause true to pause animation, false to resume animation
+     */
     public void setAnimationPaused(boolean pause)
     {
         animationPaused = pause;
     }
 
+    /**
+     *  Checks if animation is complete: if play mode is normal (not looping)
+     *      and elapsed time is greater than time corresponding to last frame.
+     *  @return
+     */
     public boolean isAnimationFinished()
     {
         return animation.isAnimationFinished(elapsedTime);
     }
 
+    /**
+     *  Sets the opacity of this actor.
+     *  @param opacity value from 0 (transparent) to 1 (opaque)
+     */
     public void setOpacity(float opacity)
     {
         this.getColor().a = opacity;
@@ -175,6 +226,11 @@ public class BaseActor extends Actor
     // physics/motion methods
     // ----------------------------------------------
 
+    /**
+     *  Set the speed of movement (in pixels/second) in current direction.
+     *  If current speed is zero (direction is undefined), direction will be set to 0 degrees.
+     *  @param speed of movement (pixels/second)
+     */
     public void setSpeed(float speed)
     {
         if (velocityVec.len() == 0)
@@ -183,51 +239,107 @@ public class BaseActor extends Actor
             velocityVec.setLength(speed);
     }
 
-    public float getSpeed()
-    {
-        return velocityVec.len();
-    }
-
-    public void setMotionAngle(float angle)
-    {
-        velocityVec.setAngle(angle);
-    }
-
-    public float getMotionAngle()
-    {
-        return velocityVec.angle();
-    }
-
-    public boolean isMoving()
-    {
-        return (getSpeed() > 0);
-    }
-
-    public void setAcceleration(float acc)
-    {
-        acceleration = acc;
-    }
-
-    public void accelerateAtAngle(float angle)
-    {
-        accelerationVec.add( new Vector2(acceleration,0).setAngle(angle));
-    }
-
-    public void accelerateForward()
-    {
-        accelerateAtAngle( getRotation());
-    }
-
+    /**
+     *  Set maximum speed of this object.
+     *  @param ms Maximum speed of this object in (pixels/second).
+     */
     public void setMaxSpeed(float ms)
     {
         maxSpeed = ms;
     }
 
+    /**
+     *  Set acceleration of this object.
+     *  @param acc Acceleration in (pixels/second) per second.
+     */
+    public void setAcceleration(float acc)
+    {
+        acceleration = acc;
+    }
+
+    /**
+     *  Set deceleration of this object.
+     *  Deceleration is only applied when object is not accelerating.
+     *  @param dec Deceleration in (pixels/second) per second.
+     */
     public void setDeceleration(float dec)
     {
         deceleration = dec;
     }
 
+    /**
+     *  Sets the angle of motion (in degrees).
+     *  If current speed is zero, this will have no effect.
+     *  @param angle of motion (degrees)
+     */
+    public void setMotionAngle(float angle)
+    {
+        velocityVec.setAngle(angle);
+    }
+
+    /**
+     *  Calculates the speed of movement (in pixels/second).
+     *  @return speed of movement (pixels/second)
+     */
+    public float getSpeed()
+    {
+        return velocityVec.len();
+    }
+
+    /**
+     *  Get the angle of motion (in degrees), calculated from the velocity vector.
+     *  <br>
+     *  To align actor image angle with motion angle, use <code>setRotation( getMotionAngle() )</code>.
+     *  @return angle of motion (degrees)
+     */
+    public float getMotionAngle()
+    {
+        return velocityVec.angle();
+    }
+
+    /**
+     *  Determines if this object is moving (if speed is greater than zero).
+     *  @return false when speed is zero, true otherwise
+     */
+    public boolean isMoving()
+    {
+        return (getSpeed() > 0);
+    }
+
+    /**
+     *  Update accelerate vector by angle and value stored in acceleration field.
+     *  Acceleration is applied by <code>applyPhysics</code> method.
+     *  @param angle Angle (degrees) in which to accelerate.
+     *  @see #acceleration
+     *  @see #applyPhysics
+     */
+    public void accelerateAtAngle(float angle)
+    {
+        accelerationVec.add( new Vector2(acceleration,0).setAngle(angle));
+    }
+
+    /**
+     *  Update accelerate vector by current rotation angle and value stored in acceleration field.
+     *  Acceleration is applied by <code>applyPhysics</code> method.
+     *  @see #acceleration
+     *  @see #applyPhysics
+     */
+    public void accelerateForward()
+    {
+        accelerateAtAngle( getRotation());
+    }
+
+    /**
+     *  Adjust velocity vector based on acceleration vector,
+     *  then adjust position based on velocity vector. <br>
+     *  If not accelerating, deceleration value is applied. <br>
+     *  Speed is limited by maxSpeed value. <br>
+     *  Acceleration vector reset to (0,0) at end of method. <br>
+     *  @param dt Time elapsed since previous frame (delta time); typically obtained from <code>act</code> method.
+     *  @see #acceleration
+     *  @see #deceleration
+     *  @see #maxSpeed
+     */
     public void applyPhysics(float dt)
     {
         // apply acceleration
@@ -256,6 +368,12 @@ public class BaseActor extends Actor
     // Collision polygon methods
     // ----------------------------------------------
 
+    /**
+     *  Set rectangular-shaped collision polygon.
+     *  This method is automatically called when animation is set,
+     *   provided that the current boundary polygon is null.
+     *  @see #setAnimation
+     */
     public void setBoundaryRectangle()
     {
         float w = getWidth();
@@ -265,6 +383,13 @@ public class BaseActor extends Actor
         boundaryPolygon = new Polygon(vertices);
     }
 
+    /**
+     *  Replace default (rectangle) collision polygon with an n-sided polygon. <br>
+     *  Vertices of polygon lie on the ellipse contained within bounding rectangle.
+     *  Note: one vertex will be located at point (0,width);
+     *  a 4-sided polygon will appear in the orientation of a diamond.
+     *  @param numSides number of sides of the collision polygon
+     */
     public void setBoundaryPolygon(int numSides)
     {
         float w = getWidth();
@@ -283,6 +408,10 @@ public class BaseActor extends Actor
 
     }
 
+    /**
+     *  Returns bounding polygon for this BaseActor, adjusted by Actor's current position and rotation.
+     *  @return bounding polygon for this BaseActor
+     */
     public Polygon getBoundaryPolygon()
     {
         boundaryPolygon.setPosition( getX(), getY() );
@@ -292,6 +421,13 @@ public class BaseActor extends Actor
         return boundaryPolygon;
     }
 
+    /**
+     *  Determine if this BaseActor overlaps other BaseActor (according to collision polygons).
+     *  @param other BaseActor to check for overlap
+     *  @return true if collision polygons of this and other BaseActor overlap
+     *  @see #setCollisionRectangle
+     *  @see #setCollisionPolygon
+     */
     public boolean overlaps(BaseActor other)
     {
         Polygon poly1 = this.getBoundaryPolygon();
@@ -304,13 +440,119 @@ public class BaseActor extends Actor
         return Intersector.overlapConvexPolygons( poly1, poly2 );
     }
 
+    /**
+     *  Implement a "solid"-like behavior:
+     *  when there is overlap, move this BaseActor away from other BaseActor
+     *  along minimum translation vector until there is no overlap.
+     *  @param other BaseActor to check for overlap
+     *  @return direction vector by which actor was translated, null if no overlap
+     */
+    public Vector2 preventOverlap(BaseActor other)
+    {
+        Polygon poly1 = this.getBoundaryPolygon();
+        Polygon poly2 = other.getBoundaryPolygon();
 
+        // initial test to improve performance
+        if ( !poly1.getBoundingRectangle().overlaps(poly2.getBoundingRectangle()) )
+            return null;
+
+        MinimumTranslationVector mtv = new MinimumTranslationVector();
+        boolean polygonOverlap = Intersector.overlapConvexPolygons(poly1, poly2, mtv);
+
+        if ( !polygonOverlap )
+            return null;
+
+        this.moveBy( mtv.normal.x * mtv.depth, mtv.normal.y * mtv.depth );
+        return mtv.normal;
+    }
+
+    /**
+     *  Set world dimensions for use by methods boundToWorld() and scrollTo().
+     *  @param width width of world
+     *  @param height height of world
+     */
+    public static void setWorldBounds(float width, float height)
+    {
+        worldBounds = new Rectangle( 0,0, width, height );
+    }
+
+    /**
+     *  Set world dimensions for use by methods boundToWorld() and scrollTo().
+     *  @param ba whose size determines the world bounds (typically a background image)
+     */
+    public static void setWorldBounds(BaseActor ba)
+    {
+        setWorldBounds( ba.getWidth(), ba.getHeight() );
+    }
+
+    /**
+     * If an edge of an object moves past the world bounds,
+     *   adjust its position to keep it completely on screen.
+     */
+    public void boundToWorld()
+    {
+        if (getX() < 0)
+            setX(0);
+        if (getX() + getWidth() > worldBounds.width)
+            setX(worldBounds.width - getWidth());
+        if (getY() < 0)
+            setY(0);
+        if (getY() + getHeight() > worldBounds.height)
+            setY(worldBounds.height - getHeight());
+    }
+
+    // ----------------------------------------------
+    // Instance list methods
+    // ----------------------------------------------
+
+    /**
+     *  Retrieves a list of all instances of the object from the given stage with the given class name
+     *      or whose class extends the class with the given name.
+     *  If no instances exist, returns an empty list.
+     *  Useful when coding interactions between different types of game objects in update method.
+     *  @param stage Stage containing BaseActor instances
+     *  @param className name of a class that extends the BaseActor class
+     *  @return list of instances of the object in stage which extend with the given class name
+     */
+    public static ArrayList<BaseActor> getList(Stage stage, String className)
+    {
+        ArrayList<BaseActor> list = new ArrayList<BaseActor>();
+
+        Class theClass = null;
+        try
+        {  theClass = Class.forName(className);  }
+        catch (Exception error)
+        {  error.printStackTrace();  }
+
+        for (Actor a : stage.getActors())
+        {
+            if ( theClass.isInstance( a ) )
+                list.add( (BaseActor)a );
+        }
+
+        return list;
+    }
+
+    /**
+     *  Returns number of instances of a given class (that extends BaseActor).
+     *  @param className name of a class that extends the BaseActor class
+     *  @return number of instances of the class
+     */
+    public static int count(Stage stage, String className)
+    {
+        return getList(stage, className).size();
+    }
 
 
     // ----------------------------------------------
     // Actor methods: act and draw
     // ----------------------------------------------
 
+    /**
+     *  Processes all Actions and related code for this object;
+     *  automatically called by act method in Stage class.
+     *  @param dt elapsed time (second) since last frame (supplied by Stage act method)
+     */
     public void act(float dt)
     {
         super.act( dt );
@@ -319,6 +561,15 @@ public class BaseActor extends Actor
             elapsedTime += dt;
     }
 
+    /**
+     *  Draws current frame of animation; automatically called by draw method in Stage class. <br>
+     *  If color has been set, image will be tinted by that color. <br>
+     *  If no animation has been set or object is invisible, nothing will be drawn.
+     *  @param batch (supplied by Stage draw method)
+     *  @param parentAlpha (supplied by Stage draw method)
+     *  @see #setColor
+     *  @see #setVisible
+     */
     public void draw(Batch batch, float parentAlpha)
     {
         super.draw( batch, parentAlpha );
