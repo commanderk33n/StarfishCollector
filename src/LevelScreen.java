@@ -1,6 +1,6 @@
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 
-public class StarfishCollector extends GameBeta
+public class LevelScreen extends BaseScreen
 {
     private Turtle turtle;
     private boolean win;
@@ -9,7 +9,7 @@ public class StarfishCollector extends GameBeta
     {
         BaseActor ocean = new BaseActor(0,0, mainStage);
         ocean.loadTexture( "assets/water-border.jpg" );
-        ocean.setSize(800,600);
+        ocean.setSize(1200,900);
         BaseActor.setWorldBounds(ocean);
 
         new Starfish(400,400, mainStage);
@@ -51,7 +51,7 @@ public class StarfishCollector extends GameBeta
         if ( BaseActor.count(mainStage, "Starfish") == 0 && !win )
         {
             win = true;
-            BaseActor youWinMessage = new BaseActor(0,0,mainStage);
+            BaseActor youWinMessage = new BaseActor(0,0,uiStage);
             youWinMessage.loadTexture("assets/you-win.png");
             youWinMessage.centerAtPosition(400,300);
             youWinMessage.setOpacity(0);

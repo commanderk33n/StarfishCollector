@@ -425,8 +425,6 @@ public class BaseActor extends Actor
      *  Determine if this BaseActor overlaps other BaseActor (according to collision polygons).
      *  @param other BaseActor to check for overlap
      *  @return true if collision polygons of this and other BaseActor overlap
-     *  @see #setCollisionRectangle
-     *  @see #setCollisionPolygon
      */
     public boolean overlaps(BaseActor other)
     {
@@ -499,6 +497,26 @@ public class BaseActor extends Actor
             setY(0);
         if (getY() + getHeight() > worldBounds.height)
             setY(worldBounds.height - getHeight());
+    }
+
+    /**
+     *  Center camera on this object, while keeping camera's range of view
+     *  (determined by screen size) completely within world bounds.
+     */
+    public void alignCamera()
+    {
+        Camera cam = this.getStage().getCamera();
+        Viewport v = this.getStage().getViewport();
+
+        // center camera on actor
+        cam.position.set( this.getX() + this.getOriginX(), this.getY() + this.getOriginY(), 0 );
+
+        // bound camera to layout
+        cam.position.x = MathUtils.clamp(cam.position.x, cam.viewportWidth/2,
+                worldBounds.width -  cam.viewportWidth/2);
+        cam.position.y = MathUtils.clamp(cam.position.y, cam.viewportHeight/2,
+                worldBounds.height - cam.viewportHeight/2);
+        cam.update();
     }
 
     // ----------------------------------------------
