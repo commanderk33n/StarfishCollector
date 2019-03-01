@@ -538,6 +538,15 @@ public class BaseActor extends Group
     }
 
     /**
+     *  Get world dimensions
+     *  @return Rectangle whose width/height represent world bounds
+     */
+    public static Rectangle getWorldBounds()
+    {
+        return worldBounds;
+    }
+
+    /**
      * If an edge of an object moves past the world bounds,
      *   adjust its position to keep it completely on screen.
      */
