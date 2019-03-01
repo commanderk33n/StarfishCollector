@@ -17,8 +17,6 @@ public class MenuScreen extends BaseScreen
         title.loadTexture( "assets/starfish-collector.png" );
 
         TextButton startButton = new TextButton( "Start", BaseGame.textButtonStyle );
-        startButton.setPosition(150,150);
-        uiStage.addActor(startButton);
 
         startButton.addListener(
                 (Event e) ->
@@ -35,8 +33,6 @@ public class MenuScreen extends BaseScreen
         );
 
         TextButton quitButton = new TextButton( "Quit", BaseGame.textButtonStyle );
-        quitButton.setPosition(500,150);
-        uiStage.addActor(quitButton);
 
         quitButton.addListener(
                 (Event e) ->

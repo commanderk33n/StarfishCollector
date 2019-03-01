@@ -495,6 +495,30 @@ public class BaseActor extends Group
     }
 
     /**
+     *  Determine if this BaseActor is near other BaseActor (according to collision polygons).
+     *  @param distance amount (pixels) by which to enlarge collision polygon width and height
+     *  @param other BaseActor to check if nearby
+     *  @return true if collision polygons of this (enlarged) and other BaseActor overlap
+     *  @see #setBoundaryRectangle
+     *  @see #setBoundaryPolygon
+     */
+    public boolean isWithinDistance(float distance, BaseActor other)
+    {
+        Polygon poly1 = this.getBoundaryPolygon();
+        float scaleX = (this.getWidth() + 2 * distance) / this.getWidth();
+        float scaleY = (this.getHeight() + 2 * distance) / this.getHeight();
+        poly1.setScale(scaleX, scaleY);
+
+        Polygon poly2 = other.getBoundaryPolygon();
+
+        // initial test to improve performance
+        if ( !poly1.getBoundingRectangle().overlaps(poly2.getBoundingRectangle()) )
+            return false;
+
+        return Intersector.overlapConvexPolygons( poly1, poly2 );
+    }
+
+    /**
      *  Set world dimensions for use by methods boundToWorld() and scrollTo().
      *  @param width width of world
      *  @param height height of world

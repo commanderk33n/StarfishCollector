@@ -16,6 +16,7 @@ public class LevelScreen extends BaseScreen
     private Turtle turtle;
     private boolean win;
     private Label starfishLabel;
+    private DialogBox dialogBox;
 
     public void initialize()
     {
@@ -35,6 +36,12 @@ public class LevelScreen extends BaseScreen
         new Rock(450,200, mainStage);
 
         turtle = new Turtle(20,20, mainStage);
+
+        Sign sign1 = new Sign(20,400, mainStage);
+        sign1.setText("West Starfish Bay");
+
+        Sign sign2 = new Sign(600,300, mainStage);
+        sign2.setText("East Starfish Bay");
 
         win = false;
 
@@ -56,7 +63,7 @@ public class LevelScreen extends BaseScreen
                 {
                     InputEvent ie = (InputEvent)e;
                     if ( ie.getType().equals(Type.touchDown) )
-                        StarfishGame.setActiveScreen( new LevelScreen() );
+                        StarfishGame.setActiveScreen( new MenuScreen() );
                     return false;
                 }
         );
@@ -65,6 +72,17 @@ public class LevelScreen extends BaseScreen
         uiTable.add(starfishLabel).top();
         uiTable.add().expandX().expandY();
         uiTable.add(restartButton).top();
+
+        dialogBox = new DialogBox(0,0, uiStage);
+        dialogBox.setBackgroundColor( Color.TAN );
+        dialogBox.setFontColor( Color.BROWN );
+        dialogBox.setDialogSize(600, 100);
+        dialogBox.setFontScale(0.80f);
+        dialogBox.alignCenter();
+        dialogBox.setVisible(false);
+
+        uiTable.row();
+        uiTable.add(dialogBox).colspan(3);
     }
 
     public void update(float dt)
@@ -97,8 +115,31 @@ public class LevelScreen extends BaseScreen
             youWinMessage.setOpacity(0);
             youWinMessage.addAction( Actions.delay(1) );
             youWinMessage.addAction( Actions.after( Actions.fadeIn(1) ) );
+
         }
 
         starfishLabel.setText("Starfish Left: " + BaseActor.count(mainStage, "Starfish"));
+
+        for ( BaseActor signActor : BaseActor.getList(mainStage, "Sign") )
+        {
+            Sign sign = (Sign)signActor;
+
+            turtle.preventOverlap(sign);
+            boolean nearby = turtle.isWithinDistance(4, sign);
+
+            if ( nearby && !sign.isViewing() )
+            {
+                dialogBox.setText( sign.getText() );
+                dialogBox.setVisible( true );
+                sign.setViewing( true );
+            }
+
+            if (sign.isViewing() && !nearby)
+            {
+                dialogBox.setText( " " );
+                dialogBox.setVisible( false );
+                sign.setViewing( false );
+            }
+        }
     }
 }
